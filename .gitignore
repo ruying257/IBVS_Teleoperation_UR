@@ -1,0 +1,94 @@
+# ===========================
+# 1. 编译构建目录 (最重要)
+# ===========================
+build/
+visp-build/
+bin/
+lib/
+out/
+
+# CMake 产生的临时文件
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+Makefile
+*.cmake
+!CMakeLists.txt
+compile_commands.json
+
+# ===========================
+# 2. IDE 和 编辑器配置
+# ===========================
+# VS Code (建议忽略，因为里面通常包含绝对路径，跨平台会冲突)
+.vscode/
+
+# Visual Studio (如果未来在 Windows 本地跑)
+.vs/
+*.sln
+*.vcxproj
+*.vcxproj.user
+
+# CLion / PyCharm
+.idea/
+cmake-build-*/
+
+# 其他编辑器临时文件
+*~
+*.swp
+*.swo
+
+# ===========================
+# 3. C++ 编译中间产物
+# ===========================
+*.o
+*.obj
+*.so
+*.so.*
+*.a
+*.dll
+*.lib
+*.exe
+*.pdb
+*.ilk
+
+# ===========================
+# 4. Python & 强化学习 (RL)
+# ===========================
+# Python 缓存
+__pycache__/
+*.pyc
+
+# 虚拟环境
+venv/
+.venv/
+env/
+
+# PyTorch 模型 (通常很大，建议忽略或使用 git-lfs)
+*.pt
+*.pth
+# ONNX 模型 (如果你希望版本控制你的模型，可以将下面这行注释掉)
+*.onnx
+
+# 训练日志 (Tensorboard 等)
+runs/
+logs/
+*.log
+
+# ===========================
+# 5. 媒体与数据 (VisP 调试用)
+# ===========================
+*.jpg
+*.png
+*.mp4
+*.avi
+*.bag
+
+# ===========================
+# 6. 系统文件
+# ===========================
+# Mac
+.DS_Store
+# Windows
+Thumbs.db
+Desktop.ini
