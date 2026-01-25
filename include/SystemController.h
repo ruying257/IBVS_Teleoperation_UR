@@ -1,3 +1,11 @@
+/**
+ * @file SystemController.h
+ * @brief 系统控制器类，负责协调机器人和传感器的操作
+ * 
+ * 该类实现了一个状态机，用于管理机器人的不同操作模式（如视觉伺服、遥操作等）。
+ * 它整合了机器人模型、传感器（如相机和力传感器）、检测算法（如AprilTag检测）
+ * 以及控制任务（如视觉伺服）。
+ */
 #ifndef SYSTEMCONTROLLER_H
 #define SYSTEMCONTROLLER_H
 

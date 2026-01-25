@@ -52,8 +52,8 @@ void RobotTeleoperation::KeyState::reset() {
 // RobotTeleoperation 类实现
 RobotTeleoperation::RobotTeleoperation() {
   setlocale(LC_ALL, "zh_CN.UTF-8");
-  signal(SIGINT, signalHandler);
-  signal(SIGTERM, signalHandler);
+  signal(SIGINT, signalHandler);  // 捕获 Ctrl+C
+  signal(SIGTERM, signalHandler); // 捕获终止信号
   key_state.reset();
 }
 
@@ -116,18 +116,16 @@ void RobotTeleoperation::stop() {
  *************************************************/
 RobotTeleoperation::ControlVector RobotTeleoperation::getControlVector() const {
   ControlVector control;
-
+  // 检查退出和停止请求
   if (key_state.exit_flag) {
     control.exit_requested = true;
     return control;
   }
-
-  control.is_estop = key_state.estop;
   if (key_state.estop) {
     control.is_estop = true;
     return control;
   }
-
+  // 检查精细模式
   bool fine_mode = key_state.fine;
   double linear_step  = fine_mode ? fine_linear_step  : coarse_linear_step;
   double angular_step = fine_mode ? fine_angular_step : coarse_angular_step;
@@ -141,7 +139,7 @@ RobotTeleoperation::ControlVector RobotTeleoperation::getControlVector() const {
   control.joint_deltas[4] = key_state.num5 ? joint_step : (key_state.num5_shift ? -joint_step : 0);
   control.joint_deltas[5] = key_state.num6 ? joint_step : (key_state.num6_shift ? -joint_step : 0);
   if (key_state.s) { control.joint_deltas = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0}; } // 's' 键清除关节命令
-
+  // 检查是否关节控制，若有则返回
   for (double delta : control.joint_deltas) {
     if (delta != 0.0) {
       control.is_joint_control = true;
@@ -157,7 +155,7 @@ RobotTeleoperation::ControlVector RobotTeleoperation::getControlVector() const {
   control.pose_deltas[4] = key_state.j ? angular_step : (key_state.l ? -angular_step : 0);
   control.pose_deltas[5] = key_state.u ? angular_step : (key_state.o ? -angular_step : 0);
   if (key_state.s) { control.pose_deltas = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0}; } // 's' 键清除位姿命令
-
+  // 检查是否位姿控制，若有则返回
   for (double delta : control.pose_deltas) {
     if (delta != 0.0) {
       control.is_pose_control = true;
@@ -220,32 +218,33 @@ void RobotTeleoperation::keyboardThread() {
       key_state.exit_flag = true;
       break;
     }
-
+    // 读取键盘输入
     char ch;
     ssize_t n = read(STDIN_FILENO, &ch, 1);
-
+    // 当成功读取到字符时, 更新按键状态
     if (n > 0) {
       // 保留状态切换的键位, 其他键位重置
       key_state.reset();
 
       switch (ch) {
+      // 退出
       case 'q':
       case 'Q':
         key_state.exit_flag = true;
         break;
-
+      // 急停
       case ' ':
         key_state.estop = !key_state.estop;
         if (!key_state.estop) {std::cout << "[急停已解除] 请用鼠标左键点击画面恢复发送速度" << std::endl;}
         break;
-
+      // 模式切换
       case 'z':
       case 'Z':
         key_state.fine = !key_state.fine;
         std::cout << (key_state.fine ? "进入精细模式" : "退出精细模式") << std::endl;
         break;
 
-      // 平移
+      // 平移控制
       case 'w':
       case 'W':
         key_state.w = true;
