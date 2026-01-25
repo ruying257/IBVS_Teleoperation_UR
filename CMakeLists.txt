@@ -9,7 +9,34 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # 查找依赖库
-find_package(VISP REQUIRED)
+set(VISP_DIR "/home/kun/visp-ws/visp-build")
+
+# 打印 VISP_DIR 路径
+message(STATUS "VISP_DIR: ${VISP_DIR}")
+
+# 检查 VISP_DIR 是否存在
+if(EXISTS ${VISP_DIR})
+    message(STATUS "VISP_DIR 存在")
+else()
+    message(WARNING "VISP_DIR 不存在: ${VISP_DIR}")
+endif()
+
+# 查找 VISP 库
+find_package(VISP REQUIRED COMPONENTS 
+    visp_core 
+    visp_gui 
+    visp_visual_features 
+    visp_robot 
+    visp_sensor 
+    visp_detection 
+    visp_vs 
+)
+
+# 打印 VISP 相关信息
+message(STATUS "VISP 版本: ${VISP_VERSION}")
+message(STATUS "VISP 包含目录: ${VISP_INCLUDE_DIRS}")
+message(STATUS "VISP 库: ${VISP_LIBRARIES}")
+
 find_package(OpenCV REQUIRED)
 # find_package(CUDA REQUIRED)
 
@@ -22,7 +49,7 @@ include_directories(
 )
 
 # 查找源文件
-file(GLOB_RECURSE SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
+file(GLOB_RECURSE SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 
 # 构建可执行文件
 add_executable(IBVS_Teleoperation ${SOURCES})

@@ -8,6 +8,10 @@
 #include <visp3/core/vpColVector.h>
 #include <visp3/core/vpHomogeneousMatrix.h>
 #include <visp3/core/vpCameraParameters.h>
+#include <visp3/core/vpImage.h>
+
+// Eigen 库头文件
+#include <Eigen/Dense>
 
 #include <opencv2/opencv.hpp>
 

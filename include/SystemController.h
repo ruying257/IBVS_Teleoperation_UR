@@ -16,10 +16,13 @@
 #include <visp3/core/vpImage.h>
 #include <visp3/core/vpColVector.h>
 #include <visp3/core/vpHomogeneousMatrix.h>
+#include <visp3/core/vpPoint.h>
 #include <visp3/robot/vpRobotUniversalRobots.h>
 #include <visp3/sensor/vpRealSense2.h>
 #include <visp3/detection/vpDetectorAprilTag.h>
 #include <visp3/vs/vpServo.h>
+#include <visp3/visual_features/vpFeaturePoint.h>
+#include <visp3/visual_features/vpFeatureBuilder.h>
 #include <visp3/gui/vpPlot.h>
 
 #include "AppConfig.h"
@@ -40,6 +43,7 @@ public:
 
     bool initialize();
     void run();
+    void stop();
 
 private:
     // 配置参数

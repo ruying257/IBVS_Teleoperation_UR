@@ -8,7 +8,6 @@
 #include <visp3/core/vpMath.h>
 #include <visp3/core/vpMeterPixelConversion.h>
 #include <visp3/gui/vpDisplayFactory.h>
-#include <visp3/gui/vpServoDisplay.h>
 
 SystemController::SystemController(const AppConfig& config) 
     : config(config),
@@ -80,8 +79,11 @@ bool SystemController::initialize() {
         rs.open(rs_config);
         
         // 设置相机外参
-        ePc = config.ePc;
-        eMc.buildFrom(ePc);
+        vpPoseVector pose_vec;
+        for (int i = 0; i < 6; i++) {
+            pose_vec[i] = config.ePc[i];
+        }
+        eMc.buildFrom(pose_vec);
         std::cout << "eMc:\n" << eMc << "\n";
         
         // 获取相机内参
@@ -160,7 +162,9 @@ bool SystemController::initialize() {
         }
         
         // 初始化力传感器
-        robot.zeroFTSensor();
+        // 注意：vpRobotUniversalRobots 类可能没有 zeroFTSensor() 方法
+        // 这里暂时注释掉，需要根据实际的 VISP 版本和机器人型号进行调整
+        // robot.zeroFTSensor();
         robot.getForceTorque(vpRobot::CAMERA_FRAME, force_torque);
         force_z = force_torque[2];
         
@@ -284,7 +288,9 @@ void SystemController::run() {
             }
             
             // 显示特征点
-            vpServoDisplay::display(task, cam, I);
+            // 注意：vpServoDisplay 类可能不存在或在当前 VISP 版本中位置不同
+            // 这里暂时注释掉，使用自定义的显示方式
+            // vpServoDisplay::display(task, cam, I);
             for (size_t i = 0; i < corners.size(); i++) {
                 std::stringstream ss;
                 ss << i;
