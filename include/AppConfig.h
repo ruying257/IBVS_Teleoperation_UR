@@ -43,7 +43,7 @@ struct AppConfig {
     double coarse_joint_step = 0.010;          // 关节快速步长
     
     // 外参矩阵
-    vpColVector ePc = vpColVector(6, 0);       // 相机外参初始值
+    vpColVector ePc = vpColVector{0.141335, 0.174283, 0.0915465, -0.556397, 1.79421, -1.77789};       // 相机外参初始值
     
     // 显示参数
     bool verbose = false;                      // 是否输出详细调试信息
