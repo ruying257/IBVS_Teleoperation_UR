@@ -8,6 +8,7 @@
 #include <visp3/core/vpMath.h>
 #include <visp3/core/vpMeterPixelConversion.h>
 #include <visp3/gui/vpDisplayFactory.h>
+#include <visp3/vs/vpServoDisplay.h>
 
 SystemController::SystemController(const AppConfig& config) 
     : config(config),
@@ -109,7 +110,13 @@ bool SystemController::initialize() {
         cdMo.buildFrom(vpTranslationVector(0, 0, config.tag_size * 10),
                       vpRotationMatrix({ 1, 0, 0, 0, -1, 0, 0, 0, -1 }));
         
-        // 初始化特征点
+        // 初始化AprilTag四个角点的世界坐标（目标坐标系）
+        // 布局：
+        // 点0: 左上角 (-s/2, -s/2, 0)
+        // 点1: 右上角 ( s/2, -s/2, 0)
+        // 点2: 右下角 ( s/2,  s/2, 0)
+        // 点3: 左下角 (-s/2,  s/2, 0)
+        // 其中s = config.tag_size  
         point.resize(4);
         point[0].setWorldCoordinates(-config.tag_size / 2., -config.tag_size / 2., 0);
         point[1].setWorldCoordinates( config.tag_size / 2., -config.tag_size / 2., 0);
@@ -198,7 +205,7 @@ bool SystemController::initialize() {
 }
 
 void SystemController::run() {
-    static double t_init_servo = vpTime::measureTimeMs();
+    static double t_init_servo = vpTime::measureTimeMs();   // 初始化视觉伺服时间
     
     while (!final_quit) {
         double t_start = vpTime::measureTimeMs();
@@ -223,7 +230,7 @@ void SystemController::run() {
         
         // 检测AprilTag
         std::vector<vpHomogeneousMatrix> cMo_vec;
-        detector.detect(I, config.tag_size, cam, cMo_vec);
+        detector.detect(I, config.tag_size, cam, cMo_vec);  // 检测AprilTag并获取相机-目标变换矩阵
         
         // 显示控制提示
         {
@@ -232,10 +239,11 @@ void SystemController::run() {
                << ", right click to quit.";
             vpDisplay::displayText(I, 20, 20, ss.str(), vpColor::red);
         }
-        
-        velocity_visual_servo = 0;
-        velocity_send = 0;
-        velocity_zero = 0;
+
+        // 视觉伺服控制
+        velocity_visual_servo = 0;  // 视觉伺服控制速度
+        velocity_send = 0;  // 发送速度
+        velocity_zero = 0;  // 零速度
         
         if (cMo_vec.size() == 1) {
             cMo = cMo_vec[0];
@@ -246,6 +254,14 @@ void SystemController::run() {
                 v_oMo[1].buildFrom(0, 0, 0, 0, 0, M_PI);
                 for (size_t i = 0; i < 2; i++) {
                     v_cdMc[i] = cdMo * v_oMo[i] * cMo.inverse();
+                    // 数学原理：
+                    // cMo: 相机到目标的当前变换矩阵 (Camera to Object)
+                    // v_oMo[i]: 目标坐标系的备选旋转 (Object to Modified Object)
+                    // cdMo: 相机到期望目标的变换矩阵 (Camera Desired to Object)
+                    // v_cdMc[i]: 相机当前姿态到期望姿态的变换矩阵 (Camera to Camera Desired)
+                    //
+                    // 变换链：c -> Mo -> v_oMo[i] -> cd^{-1} -> cd
+                    // 即：相机当前姿态 -> 目标当前姿态 -> 目标备选姿态 -> 期望相机姿态
                 }
                 if (std::fabs(v_cdMc[0].getThetaUVector().getTheta()) <
                     std::fabs(v_cdMc[1].getThetaUVector().getTheta())) {
@@ -254,24 +270,25 @@ void SystemController::run() {
                     std::cout << "Desired frame modified to avoid PI rotation of the camera" << std::endl;
                     oMo = v_oMo[1];
                 }
-                
+
+                // 计算期望特征点位置
                 for (size_t i = 0; i < point.size(); i++) {
                     vpColVector cP, p_;
-                    point[i].changeFrame(cdMo * oMo, cP);
-                    point[i].projection(cP, p_);
-                    
+                    point[i].changeFrame(cdMo * oMo, cP);   // 从世界坐标系（目标坐标系）转换到期望相机坐标系，存储在cP中
+                    point[i].projection(cP, p_);    // 投影到图像平面，存储在p_中
+                    // 存储期望特征点位置
                     pd[i].set_x(p_[0]);
                     pd[i].set_y(p_[1]);
                     pd[i].set_Z(cP[2]);
                 }
             }
             
-            std::vector<vpImagePoint> corners = detector.getPolygon(0);
+            std::vector<vpImagePoint> corners = detector.getPolygon(0);     // 获取AprilTag的四个角点
             
             for (size_t i = 0; i < corners.size(); i++) {
                 vpFeatureBuilder::create(p[i], cam, corners[i]);
                 vpColVector cP;
-                point[i].changeFrame(cMo, cP);
+                point[i].changeFrame(cMo, cP);   // 从相机坐标系转换到目标坐标系，存储在cP中
                 p[i].set_Z(cP[2]);
             }
             
@@ -288,9 +305,7 @@ void SystemController::run() {
             }
             
             // 显示特征点
-            // 注意：vpServoDisplay 类可能不存在或在当前 VISP 版本中位置不同
-            // 这里暂时注释掉，使用自定义的显示方式
-            // vpServoDisplay::display(task, cam, I);
+            vpServoDisplay::display(task, cam, I);
             for (size_t i = 0; i < corners.size(); i++) {
                 std::stringstream ss;
                 ss << i;
@@ -304,6 +319,7 @@ void SystemController::run() {
             }
             display_point_trajectory(corners);
             
+            // 显示任务误差曲线
             if (config.plot) {
                 plotter->plot(0, iter_plot, task.getError());
                 plotter->plot(1, iter_plot, velocity_visual_servo);

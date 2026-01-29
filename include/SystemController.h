@@ -73,7 +73,7 @@ private:
     std::vector<vpImagePoint> *traj_corners = nullptr;
     
     // 变换矩阵
-    vpHomogeneousMatrix eMc, cMo, oMo, cdMo;
+    vpHomogeneousMatrix eMc, cMo, oMo, cdMo; // 相机-末端执行器，相机-目标， 目标坐标系的旋转歧义解决矩阵， 期望相机-目标变换矩阵
     
     // 相机参数
     vpCameraParameters cam;
