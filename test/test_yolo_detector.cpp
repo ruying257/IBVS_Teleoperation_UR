@@ -21,7 +21,7 @@ namespace fs = std::filesystem;
 
 // 测试配置结构体
 struct TestConfig {
-    std::string model_path = "";
+    std::string model_path = "../models/best.trt";
     std::string source = "camera";  // camera, image, video
     std::string input_file = "";
     float confidence_threshold = 0.5f;
