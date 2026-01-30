@@ -105,6 +105,15 @@ bool SystemController::initialize() {
         detector.setAprilTagPoseEstimationMethod(poseEstimationMethod);
         detector.setDisplayTag(config.display_tag);
         detector.setAprilTagQuadDecimate(config.tag_quad_decimate);
+
+        // 初始化 YOLO 检测器（如果有模型文件）
+        std::string yolo_model_path = "";
+        if (!yolo_model_path.empty()) {
+            yolo_detector = TensorRT_detection(yolo_model_path);
+            std::cout << "YOLO 检测器初始化成功" << std::endl;
+        } else {
+            std::cout << "未指定 YOLO 模型路径，将只使用 AprilTag 检测" << std::endl;
+        }
         
         // 初始化目标变换矩阵
         cdMo.buildFrom(vpTranslationVector(0, 0, config.tag_size * 10),
@@ -213,6 +222,31 @@ void SystemController::run() {
         // 从相机获取并显示图像
         rs.acquire(I);
         vpDisplay::display(I);
+
+        // 执行 YOLO 检测
+        FrameData frame;
+        vpImage<vpRGBa> rgb_image;
+        vpImageConvert::convert(I, rgb_image);
+        frame.image = rgb_image;
+        frame.timestamp = 0;
+
+        DetectionResult detection_result;
+        yolo_detector.infer_trtmodel(frame, detection_result);
+
+        // 绘制 YOLO 检测结果
+        if (detection_result.success) {
+            for (const auto& bolt : detection_result.bolts) {
+                vpDisplay::displayRectangle(I, bolt.bounding_box, vpColor::green, false, 2);
+                vpDisplay::displayText(I, bolt.bounding_box.getTopLeft() + vpImagePoint(-10, -10), 
+                                      bolt.class_name + " " + std::to_string(bolt.confidence), 
+                                      vpColor::green);
+            }
+            
+            // 显示检测统计信息
+            std::string detection_info = "YOLO: " + std::to_string(detection_result.bolts.size()) + " objects, " + 
+                                        std::to_string(detection_result.processing_time_ms) + " ms";
+            vpDisplay::displayText(I, vpImagePoint(40, 20), detection_info, vpColor::yellow);
+        }
         
         // 读取键盘控制
         RobotTeleoperation::ControlVector teleop_control = teleop.getControlVector();

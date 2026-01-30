@@ -10,11 +10,15 @@
 #include <vector>
 #include <memory>
 #include <fstream>
+
+// 条件包含 TensorRT 相关头文件
+#ifdef HAVE_TENSORRT
 // TensorRT 相关头文件
 #include <NvInfer.h>
 #include <NvInferRuntime.h>
 // CUDA 相关头文件
 #include <cuda_runtime.h>
+#endif
 
 //图像处理
 #include <visp3/core/vpImage.h>
@@ -46,6 +50,9 @@ struct DetectionResult {
 
 // 用于打印 CUDA 报错 - 宏定义
 #define checkRuntime(op) __check_cuda_runtime((op), #op, __FILE__, __LINE__)
+
+// 条件编译 TensorRT 相关代码
+#ifdef HAVE_TENSORRT
 
 // 用于打印 TensorRT 报错，准备一个 logger 类，打印构建 TensorRT 推理模型过程中的一些错误或警告，按照指定的严重性程度 (severity) 打印信息
     // 内联函数可以放在头文件，因为内联函数不会产生独立的符号，不会引起多重定义的问题‌
@@ -81,7 +88,7 @@ public:
         }
     }
 };
-//
+
 class TensorRT_detection {
 public:
     TensorRT_detection() = default;
@@ -114,14 +121,6 @@ private:
     cudaStream_t _stream = nullptr;
 
     // 定义模型输入输出尺寸
-    // int input_batch = 1;
-    // int input_channel = 3;
-    // int input_height = 720;
-    // int input_width = 1280;
-    // int output_batch = 1;          // 与输入 batch 一致
-    // int output_dim1 = 7;           // 输出的第二维（如类别数或特征维度）
-    // int output_dim2 = 33600;       // 输出的第三维（特征数量或预测结果）
-
     int input_batch = 1;
     int input_channel = 3;
     int input_height = 1280;
@@ -136,12 +135,39 @@ private:
     float* input_data_host = nullptr;    // 主机内存（CPU）中的输入数据
     float* input_data_device = nullptr;  // 设备内存（GPU）中的输入数据
 
-    // output 数据（与模型输出维度 [1, 7, 33600] 匹配）
+    // output 数据（与模型输出维度 [1,7,33600] 匹配）
     // 总元素数量 = batch × 维度1 × 维度2
     int output_numel = output_batch * output_dim1 * output_dim2;
     float* output_data_host = nullptr;   // 主机内存（CPU）中的输出结果
     float* output_data_device = nullptr; // 设备内存（GPU）中的输出结果
 
 };
+
+#else
+
+// 当没有 TensorRT 时的替代实现
+class TensorRT_detection {
+public:
+    TensorRT_detection() = default;
+    TensorRT_detection(const std::string& file) {
+        std::cout << "TensorRT 未找到，YOLO 检测不可用" << std::endl;
+    }
+    ~TensorRT_detection() {}
+    
+    void infer_trtmodel(FrameData &frame, DetectionResult &result) {
+        result.success = false;
+        result.message = "TensorRT 未找到，YOLO 检测不可用";
+    }
+    
+    cv::Mat convertVispToCvMat(const vpImage<vpRGBa>& visp_img) {
+        return cv::Mat();
+    }
+    
+    cv::Mat preprocessImage(const cv::Mat& image) {
+        return cv::Mat();
+    }
+};
+
+#endif
 
 #endif // TENSORRT_DETECTION_H

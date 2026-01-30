@@ -27,6 +27,7 @@
 
 #include "AppConfig.h"
 #include "RobotTeleoperation.h"
+#include "TensorRT_detection.h"
 
 class SystemController {
 public:
@@ -54,6 +55,7 @@ private:
     vpRealSense2 rs;
     vpDetectorAprilTag detector;
     vpServo task;
+    TensorRT_detection yolo_detector;
     
     // 遥操作
     RobotTeleoperation teleop;

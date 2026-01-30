@@ -1,3 +1,5 @@
+#ifdef HAVE_TENSORRT
+
 #include "TensorRT_detection.h"
 
 // 打印 Cuda 报错
@@ -101,6 +103,7 @@ TensorRT_detection::~TensorRT_detection(){
     if (_stream) checkRuntime(cudaStreamDestroy(_stream));
 
     //qInfo() << "TensorRT 检测模块资源释放成功！";  // 释放成功信息
+
 }
 
 // 读取 .trt 文件
@@ -222,7 +225,7 @@ void TensorRT_detection::infer_trtmodel(FrameData &frame, DetectionResult &resul
     //qInfo() << "模型推理成功";
 
     // 将输出结果从 GPU 内存拷贝至 CPU 内存
-    checkRuntime(cudaMemcpyAsync(output_data_host,output_data_device,output_numel * sizeof(float),cudaMemcpyDeviceToHost, _stream));
+    checkRuntime(cudaMemcpyAsync(output_data_host, output_data_device, output_numel * sizeof(float), cudaMemcpyDeviceToHost, _stream));
     // 等待直到 _stream 流的工作完成，在这行之前不要做与输出结果处理或展示相关的操作
     checkRuntime(cudaStreamSynchronize(_stream));
 
@@ -347,3 +350,5 @@ void TensorRT_detection::infer_trtmodel(FrameData &frame, DetectionResult &resul
 
     //qInfo() << "推理完成";
 }
+
+#endif
