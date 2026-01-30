@@ -370,11 +370,12 @@ void SystemController::run() {
         // 遥操作速度命令
         vpColVector v_teleop_cmd(6, 0);
         
+        // 第一阶段:IBVS 控制旋转, 遥操作控制平移
         if (freeze_translation && teleop_control.is_pose_control) {
             v_teleop_cmd[0] = teleop_control.pose_deltas[0];
             v_teleop_cmd[1] = teleop_control.pose_deltas[1];
             v_teleop_cmd[2] = teleop_control.pose_deltas[2];
-            v_teleop_cmd[5] = teleop_control.pose_deltas[5];
+            v_teleop_cmd[5] = teleop_control.pose_deltas[5];    // 遥操作控制绕z轴旋转
         }
         
         // 合成最终速度

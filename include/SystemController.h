@@ -85,14 +85,14 @@ private:
     vpColVector force_torque;
     
     // 控制变量
-    State current_state;
-    bool final_quit;
-    bool send_velocities;
-    bool servo_started;
-    bool freeze_translation;
-    int converged_cont;
-    int iter_plot;
-    double force_z;
+    State current_state;        
+    bool final_quit;        // 是否最终退出
+    bool send_velocities;   // 是否发送速度命令
+    bool servo_started;     // 是否启动了视觉伺服任务
+    bool freeze_translation;     // 是否冻结平移控制
+    int converged_cont;     // 连续收敛次数
+    int iter_plot;          // 迭代次数，用于绘图
+    double force_z;         // z轴力传感器测量值
     
     // 方法
     void process_ibvs();
