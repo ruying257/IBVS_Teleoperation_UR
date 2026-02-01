@@ -36,7 +36,7 @@ namespace fs = std::filesystem;
 // 用于存储命令行参数和测试配置信息
 // ============================================================================
 struct TestConfig {
-    std::string model_path = "../../models/best.trt";   // TensorRT 模型路径
+    std::string model_path = "../../models/model_fp16.engine";   // TensorRT 模型路径
     std::string source = "camera";                      // 输入源类型：camera, image, video
     std::string input_file = "";                        // 输入文件路径（图像或视频）
     float confidence_threshold = 0.5f;                  // 置信度阈值
@@ -328,6 +328,14 @@ int main(int argc, char** argv) {
         // 初始化 YOLO 检测器
         std::cout << "初始化 YOLO 检测器..." << std::endl;
         TensorRT_detection detector(config.model_path);
+        if (!detector.isInitialized()) {
+            std::cerr << "错误: YOLO 检测器初始化失败！" << std::endl;
+            std::cerr << "请检查:" << std::endl;
+            std::cerr << "  1. 模型文件路径是否正确: " << config.model_path << std::endl;
+            std::cerr << "  2. 模型文件是否与当前 TensorRT 版本兼容" << std::endl;
+            std::cerr << "  3. CUDA 驱动和 GPU 是否正常工作" << std::endl;
+            return EXIT_FAILURE;
+        }
         std::cout << "YOLO 检测器初始化完成" << std::endl;
 
         // 初始化变量

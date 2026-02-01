@@ -27,36 +27,37 @@ if(VISP_FOUND)
     message(STATUS "找到 VISP 库: ${VISP_VERSION}")
 endif()
 
-# 2. 查找 OpenCV
+# 2. 查找 OpenCV 库
 find_package(OpenCV REQUIRED)
 if(OpenCV_FOUND)
     message(STATUS "找到 OpenCV 库: ${OpenCV_VERSION}")
 endif()
 
-# 3. 查找 CUDA
+# 3. 查找 CUDA 库
 find_package(CUDA QUIET)
 if(CUDA_FOUND)
-    message(STATUS "找到 CUDA: ${CUDA_VERSION}")
+    message(STATUS "找到 CUDA 库: ${CUDA_VERSION}")
 else()
     message(WARNING "CUDA 未找到，YOLO 检测将不可用")
 endif()
 
-# 4. 查找 TensorRT
+# 4. 查找 TensorRT 库位置
 if(DEFINED ENV{TENSORRT_DIR})
     set(TENSORRT_ROOT $ENV{TENSORRT_DIR})
-    message(STATUS "找到 TensorRT: ${TENSORRT_ROOT}")
+    message(STATUS "找到 TensorRT 库: ${TENSORRT_ROOT}")
 else()
     # 如果没设环境变量，尝试在默认位置找(兼容性)
     set(TENSORRT_ROOT "$ENV{HOME}/TensorRT-8.6")
     message(WARNING "未找到 TensorRT_DIR 环境变量，尝试默认位置: ${TENSORRT_ROOT}")
 endif()
 
-# 查找 TensorRT 库
+# 查找 TensorRT 库文件
 find_library(NVINFER_LIBRARY nvinfer HINTS ${TENSORRT_ROOT}/lib)
 find_library(NVPARSERS_LIBRARY nvparsers HINTS ${TENSORRT_ROOT}/lib)
 find_library(NVONNXPARSERS_LIBRARY nvonnxparser HINTS ${TENSORRT_ROOT}/lib)
 find_library(NVINFER_PLUGIN_LIBRARY nvinfer_plugin HINTS ${TENSORRT_ROOT}/lib)
 
+# 验证 TensorRT 是否找到
 if(NVINFER_LIBRARY)
     message(STATUS "找到 TensorRT 库: ${NVINFER_LIBRARY}")
     add_definitions(-DHAVE_TENSORRT)
@@ -79,14 +80,14 @@ include_directories(
     ${OpenCV_INCLUDE_DIRS}
 )
 
-# TensorRT 包含目录
-if(NVINFER_LIBRARY)
-    include_directories(${TENSORRT_ROOT}/include)
-endif()
-
 # CUDA 包含目录（如果找到）
 if(CUDA_FOUND)
     include_directories(${CUDA_INCLUDE_DIRS})
+endif()
+
+# TensorRT 包含目录
+if(NVINFER_LIBRARY)
+    include_directories(${TENSORRT_ROOT}/include)
 endif()
 
 # ============================================================================

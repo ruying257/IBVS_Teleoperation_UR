@@ -100,12 +100,15 @@ public:
     cv::Mat convertVispToCvMat(const vpImage<vpRGBa>& visp_img);
     // 预处理
     cv::Mat preprocessImage(const cv::Mat& image);
+    // 检查初始化是否成功
+    bool isInitialized() const { return _initialized; }
 private:
     // 读取 .trt 文件
     std::vector<unsigned char> load_file(const std::string& file);
     float m_confidence_threshold = 0.1f;  // 置信度阈值
     float m_nms_threshold = 0.4f;         // NMS阈值
     std::vector<std::string> m_class_names;  // 添加类别名称列表
+    bool _initialized = false;             // 初始化成功标志
 public:
     // 输出结果
 
