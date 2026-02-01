@@ -8,12 +8,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# 查找依赖库
-set(VISP_DIR "/home/kun/visp-ws/visp-build")
-
-# 打印 VISP_DIR 路径
-message(STATUS "VISP_DIR: ${VISP_DIR}")
-
 # 检查 VISP_DIR 是否存在
 if(EXISTS ${VISP_DIR})
     message(STATUS "VISP_DIR 存在")
@@ -34,9 +28,10 @@ find_package(VISP REQUIRED COMPONENTS
 
 # 打印 VISP 相关信息
 message(STATUS "VISP 版本: ${VISP_VERSION}")
-message(STATUS "VISP 包含目录: ${VISP_INCLUDE_DIRS}")
+# message(STATUS "VISP 包含目录: ${VISP_INCLUDE_DIRS}")
 message(STATUS "VISP 库: ${VISP_LIBRARIES}")
 
+# 查找 OpenCV 库
 find_package(OpenCV REQUIRED)
 
 # 查找 CUDA
@@ -49,11 +44,22 @@ else()
     message(WARNING "CUDA 未找到，YOLO 检测将不可用")
 endif()
 
+# 检查 TensorRT_DIR 是否存在
+if(DEFINED ENV{TENSORRT_DIR})
+    set(TENSORRT_ROOT $ENV{TENSORRT_DIR})
+    message(STATUS "Using TensorRT from Env Var: ${TENSORRT_ROOT}")
+else()
+    # 如果没设环境变量，尝试在默认位置找(兼容性)
+    set(TENSORRT_ROOT "$ENV{HOME}/TensorRT-8.6")
+    message(WARNING "Env Var TENSORRT_DIR not set, trying default: ${TENSORRT_ROOT}")
+endif()
+# 添加 TensorRT 包含目录
+include_directories(${TENSORRT_ROOT}/include)
 # 查找 TensorRT
-find_library(NVINFER_LIBRARY nvinfer)
-find_library(NVPARSERS_LIBRARY nvparsers)
-find_library(NVONNXPARSERS_LIBRARY nvonnxparser)
-find_library(NVINFER_PLUGIN_LIBRARY nvinfer_plugin)
+find_library(NVINFER_LIBRARY nvinfer HINTS ${TENSORRT_ROOT}/lib)
+find_library(NVPARSERS_LIBRARY nvparsers HINTS ${TENSORRT_ROOT}/lib)
+find_library(NVONNXPARSERS_LIBRARY nvonnxparser HINTS ${TENSORRT_ROOT}/lib)
+find_library(NVINFER_PLUGIN_LIBRARY nvinfer_plugin HINTS ${TENSORRT_ROOT}/lib)
 
 if(NVINFER_LIBRARY)
     message(STATUS "TensorRT 库: ${NVINFER_LIBRARY}")

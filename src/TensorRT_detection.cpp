@@ -42,15 +42,15 @@ TensorRT_detection::TensorRT_detection(const std::string& file){
     _context = make_nvshared(_engine->createExecutionContext());
 
     // 打印 .trt 模型的输入输出张量的名称和维度，这里与 onnx 中的名称和维度一致
-     // for (int i=0, e=_engine->getNbIOTensors(); i<e; i++){
-     //     auto const name = _engine->getIOTensorName(i);
-     //     auto const size = _engine->getTensorShape(name);
-     //     qInfo() << "张量名称: " << name;
-     //     for (int j = 0; j < size.nbDims; ++j) {
-     //         qInfo() << "维度 " << j << ": " << size.d[j];
-     //     }
-     //     qInfo() << "";
-     // }
+     for (int i=0, e=_engine->getNbIOTensors(); i<e; i++){
+         auto const name = _engine->getIOTensorName(i);
+         auto const size = _engine->getTensorShape(name);
+         qInfo() << "张量名称: " << name;
+         for (int j = 0; j < size.nbDims; ++j) {
+             qInfo() << "维度 " << j << ": " << size.d[j];
+         }
+         qInfo() << "";
+     }
 
     // 2. CUDA 相关操作
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -71,16 +71,16 @@ TensorRT_detection::TensorRT_detection(const std::string& file){
     _context->setTensorAddress("images", input_data_device);    // 绑定输入张量
     _context->setTensorAddress("output0", output_data_device);    // 绑定输出张量
 
-    //qInfo() << "TensorRT 检测模块初始化成功！";  // 成功信息
+    qInfo() << "TensorRT 检测模块初始化成功！";  // 成功信息
 
     // 打印输入宽度和高度
-    //qInfo() << "初始化前 input_width: " << input_width;
-    //qInfo() << "初始化前 input_height: " << input_height;
+    qInfo() << "初始化前 input_width: " << input_width;
+    qInfo() << "初始化前 input_height: " << input_height;
     // 初始化图像尺寸
     m_input_size = cv::Size(input_width, input_height);
-    //qInfo() << "初始化图像尺寸初始化成功！";  // 成功信息
+    qInfo() << "初始化图像尺寸初始化成功！";  // 成功信息
     // 打印初始化后的尺寸
-    //qInfo() << "初始化后 m_input_size: " << QString("%1x%2").arg(m_input_size.width).arg(m_input_size.height);
+    qInfo() << "初始化后 m_input_size: " << QString("%1x%2").arg(m_input_size.width).arg(m_input_size.height);
 
     //4.初始化类别名称
     m_class_names.push_back("luoshuan");  // 类别0：螺栓
@@ -102,7 +102,7 @@ TensorRT_detection::~TensorRT_detection(){
     // 释放 CUDA 流
     if (_stream) checkRuntime(cudaStreamDestroy(_stream));
 
-    //qInfo() << "TensorRT 检测模块资源释放成功！";  // 释放成功信息
+    qInfo() << "TensorRT 检测模块资源释放成功！";  // 释放成功信息
 
 }
 
