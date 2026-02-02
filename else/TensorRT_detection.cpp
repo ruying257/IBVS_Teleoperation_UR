@@ -2,25 +2,9 @@
 
 #include "TensorRT_detection.h"
 #include <iostream>
-#include <chrono>
 
-/**
- * @file TensorRT_detection.cpp
- * @brief TensorRT 目标检测模块实现文件
- * @details 该文件实现了基于 TensorRT 的 YOLO 目标检测功能，包括模型加载、初始化、推理等核心功能。
- * @author 自动生成
- * @date 2026-02-01
- */
-
-/**
- * @brief 检查 CUDA 运行时错误
- * @param code CUDA 操作结果代码
- * @param op 操作名称
- * @param file 文件名
- * @param line 行号
- * @return 操作是否成功
- * @details 检查 CUDA 操作是否成功，失败则打印详细的错误信息
- */
+// 打印 Cuda 报错
+// 函数定义不应放在头文件里，否则当头文件被多个 cpp 调用时，会出现重复定义的问题
 bool __check_cuda_runtime(cudaError_t code, const char* op, const char* file, int line) {
     if (code != cudaSuccess) {
         const char* err_name = cudaGetErrorName(code);
@@ -31,11 +15,7 @@ bool __check_cuda_runtime(cudaError_t code, const char* op, const char* file, in
     return true;
 }
 
-/**
- * @brief TensorRT_detection 构造函数
- * @param file TensorRT 引擎文件路径
- * @details 初始化 TensorRT 检测器，加载模型文件，设置相关参数，分配内存等
- */
+// 构造函数
 TensorRT_detection::TensorRT_detection(const std::string& file){
     std::cout << "开始初始化 TensorRT 检测器..." << std::endl;
     std::cout << "模型文件路径: " << file << std::endl;
@@ -172,10 +152,7 @@ TensorRT_detection::TensorRT_detection(const std::string& file){
 
 }
 
-/**
- * @brief TensorRT_detection 析构函数
- * @details 释放 TensorRT 检测器占用的资源，包括内存、CUDA 流等
- */
+// 析构函数
 TensorRT_detection::~TensorRT_detection(){
     if (!_initialized) {
         // 如果初始化未成功，部分资源可能未分配
@@ -215,12 +192,7 @@ TensorRT_detection::~TensorRT_detection(){
     std::cout << "TensorRT 检测模块资源释放成功！" << std::endl;
 }
 
-/**
- * @brief 读取 .trt 文件
- * @param file 文件路径
- * @return 文件二进制数据
- * @details 读取 TensorRT 引擎文件的二进制数据，返回存储在 vector 中的字节数据
- */
+// 读取 .trt 文件
 std::vector<unsigned char> TensorRT_detection::load_file(const std::string& file) {  // 返回结果为无符号字符的vector，其数据存储是连成片的
     std::ifstream in(file, std::ios::binary);          // 定义一个数据读取对象，以二进制读取数据
     if (!in.is_open()) return {};                      // 如果没有可读数据则返回空
@@ -239,36 +211,37 @@ std::vector<unsigned char> TensorRT_detection::load_file(const std::string& file
 }
 
 
-/**
- * @brief 图像转换方法
- * @param visp_img ViSP 格式图像
- * @return OpenCV 格式图像
- * @details 将 ViSP 格式的图像转换为 OpenCV 格式，便于后续的图像处理和模型推理
- */
+// 图像转换
 cv::Mat TensorRT_detection::convertVispToCvMat(const vpImage<vpRGBa>& visp_img)
 {
+    // 打印输入图像的基本信息
+    //std::cout << "输入图像高度: " << visp_img.getHeight() << std::endl;
+    //std::cout << "输入图像宽度: " << visp_img.getWidth() << std::endl;
+    //std::cout << "输入图像通道数: 4 (vpRGBa 类型)" << std::endl;
     // 使用ViSP格式的图像转换
     cv::Mat cv_img(visp_img.getHeight(), visp_img.getWidth(), CV_8UC4, (void*)visp_img.bitmap);
-    
+    // 打印转换后 OpenCV 图像的基本信息
+    //std::cout << "转换后 OpenCV 图像高度: " << cv_img.rows << std::endl;
+    //std::cout << "转换后 OpenCV 图像宽度: " << cv_img.cols << std::endl;
+    //std::cout << "转换后 OpenCV 图像通道数: " << cv_img.channels() << std::endl;
     // 检查转换后图像是否为空
     if (cv_img.empty()) {
         std::cout << "转换后的 OpenCV 图像为空！" << std::endl;
     }
-    
-    // 将 RGBA 格式转换为 RGB 格式
     cv::cvtColor(cv_img, cv_img, cv::COLOR_RGBA2RGB);
-    
+    // 打印颜色转换后 OpenCV 图像的基本信息
+    //std::cout << "颜色转换后 OpenCV 图像高度: " << cv_img.rows << std::endl;
+    //std::cout << "颜色转换后 OpenCV 图像宽度: " << cv_img.cols << std::endl;
+    //std::cout << "颜色转换后 OpenCV 图像通道数: " << cv_img.channels() << std::endl;
     return cv_img;
 }
 
-/**
- * @brief 图像预处理方法
- * @param image OpenCV 格式图像
- * @return 预处理后的图像
- * @details 对输入图像进行预处理，包括调整大小、归一化等操作，使其符合模型输入要求
- */
+// 图像预处理
 cv::Mat TensorRT_detection::preprocessImage(const cv::Mat& image)
 {
+    //std::cout << "开始图像预处理" << std::endl;
+    //std::cout << "输入图像尺寸: " << image.size().width << "x" << image.size().height << std::endl;
+    //std::cout << "输入图像通道数: " << image.channels() << std::endl;
     // 确保输入图像是3通道
     cv::Mat input_image;
     if (image.channels() == 1) {
@@ -285,12 +258,16 @@ cv::Mat TensorRT_detection::preprocessImage(const cv::Mat& image)
         return cv::Mat();
     }
 
+    //std::cout << "转换后图像尺寸: " << input_image.size().width << "x" << input_image.size().height << std::endl;
+    //std::cout << "转换后图像通道数: " << input_image.channels() << std::endl;
+    // 打印目标尺寸信息
+    //std::cout << "目标尺寸 (m_input_size): " << m_input_size.width << "x" << m_input_size.height << std::endl;
+
     // 检查 m_input_size 是否有效
     if (m_input_size.width == 0 || m_input_size.height == 0) {
         std::cout << "目标尺寸无效" << std::endl;
         return cv::Mat();
     }
-    
     // 调整大小
     cv::Mat resized;
     cv::resize(input_image, resized, m_input_size);
@@ -299,55 +276,57 @@ cv::Mat TensorRT_detection::preprocessImage(const cv::Mat& image)
     cv::Mat float_img;
     resized.convertTo(float_img, CV_32FC3, 1.0 / 255.0);
 
-    // 确保正确的通道顺序 (HWC -> CHW)
+    // 确保正确的通道顺序 (HWC -> CHW 如果需要)
+    // 检查模型需要的输入格式
+    // 如果是 CHW 格式，需要转换
     cv::Mat chw_img;
     cv::dnn::blobFromImage(float_img, chw_img, 1.0, cv::Size(), cv::Scalar(), true, false);
 
     return chw_img;
 }
 
-/**
- * @brief 模型推理方法
- * @param frame 输入帧数据
- * @param result 输出检测结果
- * @details 使用 TensorRT 引擎对输入图像进行目标检测，包括图像转换、预处理、推理、结果解析等步骤
- */
+// 模型推理
 void TensorRT_detection::infer_trtmodel(FrameData &frame, DetectionResult &result){
     // 记录起始时间
     auto start = std::chrono::high_resolution_clock::now();
 
     // 转换图像格式
     cv::Mat cv_img = convertVispToCvMat(frame.image);
-    
+    //std::cout << "图像格式转换成功" << std::endl;
     // 图像预处理
     cv::Mat preprocessed = preprocessImage(cv_img);
+    //std::cout << "图像预处理成功" << std::endl;
+
+    // 记录起始时间
+    //auto start = std::chrono::high_resolution_clock::now();
 
     //将预处理结果复制到输入缓冲区
     std::memcpy(input_data_host, preprocessed.ptr<float>(), input_numel * sizeof(float));
+    //std::cout << "预处理结果复制到输入缓冲区成功" << std::endl;
 
     // 将输入图片从 CPU 内存拷贝至 GPU 内存
     checkRuntime(cudaMemcpyAsync(input_data_device, input_data_host, input_numel *sizeof(float), cudaMemcpyHostToDevice, _stream));
-    
     // 模型推理
     bool success = _context->enqueueV3(_stream);
+    //std::cout << "模型推理成功" << std::endl;
 
     // 将输出结果从 GPU 内存拷贝至 CPU 内存
     checkRuntime(cudaMemcpyAsync(output_data_host, output_data_device, output_numel * sizeof(float), cudaMemcpyDeviceToHost, _stream));
-    
     // 等待直到 _stream 流的工作完成，在这行之前不要做与输出结果处理或展示相关的操作
     checkRuntime(cudaStreamSynchronize(_stream));
 
-    // 初始化结果
+
+    // 记录起始时间
+    //auto start = std::chrono::high_resolution_clock::now();
+    // 后处理
+
     result.timestamp = 0;
     result.success = false;
 
     try {
         // 获取输出张量信息
         std::vector<int64_t> shape = {output_batch, output_dim1, output_dim2};
-        // 输出维度 ： [1, 7, 33600]
-            // - shape[0] = 1 ：批处理大小
-            // - shape[1] = 7 ：每个预测点的特征维度（4个坐标 + 3个类别概率）
-            // - shape[2] = 33600 ：预测点总数（130×130×2 或类似网格）
+
         // 验证输出维度
         if (shape.size() != 3 || shape[1] != 7) {
             std::cout << "Unexpected output shape: ["
@@ -412,10 +391,11 @@ void TensorRT_detection::infer_trtmodel(FrameData &frame, DetectionResult &resul
             }
         }
 
-        // 应用NMS（非极大值抑制）
+        // 应用NMS
         std::vector<int> indices;
         cv::dnn::NMSBoxes(boxes, confidences, m_confidence_threshold, m_nms_threshold, indices);
 
+        int bolt_count = 0;
         // 构建最终结果
         for (int idx : indices) {
             DetectionResult::BoltDetection bolt;
@@ -428,6 +408,12 @@ void TensorRT_detection::infer_trtmodel(FrameData &frame, DetectionResult &resul
             } else {
                 bolt.class_name = "unknown";
             }
+            bolt_count++;
+            // std::cout << "螺栓 #" << bolt_count
+            //            << ": 位置=[" << boxes[idx].x << ", " << boxes[idx].y
+            //            << "], 尺寸=[" << boxes[idx].width << "x" << boxes[idx].height
+            //            << "], 置信度=" << confidences[idx]
+            //            << ", 类别=" << bolt.class_id << "(" << bolt.class_name << ")" << std::endl;
 
             result.bolts.push_back(bolt);
         }
@@ -440,10 +426,15 @@ void TensorRT_detection::infer_trtmodel(FrameData &frame, DetectionResult &resul
         std::cout << "Detection error:" << e.what() << std::endl;
     }
 
-    // 计算处理时间
     auto end = std::chrono::high_resolution_clock::now();
     result.processing_time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    double fps = 1000.0 / result.processing_time_ms;
 
+    //std::cout << "检测到" << result.bolts.size() << "个螺栓" << std::endl;
+    //std::cout << "处理时间: " << result.processing_time_ms << " ms" << std::endl;
+    //std::cout << "检测帧率: " << fps << " FPS" << std::endl;
+
+    //std::cout << "推理完成" << std::endl;
 }
 
 #endif
