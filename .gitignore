@@ -92,3 +92,10 @@ logs/
 # Windows
 Thumbs.db
 Desktop.ini
+
+# ===========================
+# 7. 其他临时文件
+# ===========================
+SYSTEM_ARCHITECTURE.md
+USER_GUIDE.md
+AGENTS.md
