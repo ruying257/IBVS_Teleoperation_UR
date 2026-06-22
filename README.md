@@ -1,81 +1,74 @@
-# IBVS Teleoperation UR
+# 基于 IBVS 的电动扳手对准系统
 
-> 基于视觉伺服的 Universal Robots 遥操作系统。项目集成 RealSense D405、AprilTag、ViSP、OpenCV、TensorRT/YOLO，实现从视觉感知到机器人运动控制的实时闭环。
+> 面向螺栓作业的 Universal Robots 视觉伺服与遥操作系统。项目通过 RealSense D405 识别螺栓平面上的 AprilTag，使用 IBVS 调整机械臂末端电动扳手姿态，使电动扳手与螺栓平面平行；对准后通过键盘控制电动扳手在 XYZ 方向移动，实现靠近、定位和作业前微调。
 
-## Highlights
+<div align="center">
+  <img src="assets/全局视角.gif" alt="全局视角" width="45%">
+  <img src="assets/12eD405视角.gif" alt="UR12e D405 视角" width="45%">
+</div>
 
-- 实现基于 AprilTag 的 Eye-in-Hand 图像视觉伺服控制，用于机器人目标对准与跟踪。
-- 支持 Universal Robots 机械臂键盘遥操作，包含位姿控制、关节控制、精细/快速模式和急停逻辑。
-- 集成 RealSense D405 RGB-D 相机采集，并通过 ViSP 完成相机接口与视觉伺服计算。
-- 封装 TensorRT YOLO 推理模块，在 CUDA/TensorRT 可用时支持 GPU 加速目标检测。
+## 说明
+
+左侧为全局视角，右侧为 UR12e 末端 D405 相机视角。演示重点是机械臂在 AprilTag 视觉反馈下调整电动扳手姿态，使其与螺栓平面平行，并在对准后通过键盘完成 XYZ 方向微调。
+
+## 项目亮点
+
+- 实现基于 AprilTag 的 Eye-in-Hand IBVS 控制，用于让末端电动扳手与螺栓平面自动对准。
+- 将任务拆分为两阶段：IBVS 姿态对准，收敛后键盘控制电动扳手 XYZ 平移。
+- 支持 Universal Robots 机械臂键盘遥操作，包含精细/快速步长、急停和速度发送开关。
+- 集成 RealSense D405 RGB-D 相机采集，并通过 ViSP 完成 AprilTag 检测、位姿估计和视觉伺服计算。
+- 完成 YOLO 螺栓识别实验，可识别螺栓平面上的四个螺栓位置；同时保留 TensorRT 推理模块和独立测试程序。
 - 使用 C++17、CMake、ViSP、OpenCV、Eigen 构建模块化机器人控制系统。
-- 提供独立 YOLO 测试程序，支持相机、图片和视频输入，便于验证检测效果与性能。
 
-## Tech Stack
+## 技术栈
 
 `C++17` / `CMake` / `ViSP` / `OpenCV` / `Eigen` / `RealSense SDK` /
-`CUDA` / `TensorRT` / `YOLO` / `Universal Robots`
+`AprilTag` / `Universal Robots`/ `TensorRT` / `YOLO`
 
-## Demo
 
-当前仓库暂未包含演示图片或视频素材。建议将运行截图、机械臂运动 GIF、YOLO 检测 GIF
-放入 `assets/` 目录，并在本节展示：
-
-```markdown
-| 视觉伺服 | 遥操作 | 目标检测 |
-| --- | --- | --- |
-| ![](assets/ibvs.gif) | ![](assets/teleop.gif) | ![](assets/yolo.gif) |
-```
-
-也可以添加完整视频链接：
-
-```markdown
-[查看完整演示视频](assets/demo.mp4)
-```
-
-## System Overview
+## 系统流程
 
 ```mermaid
 flowchart LR
-    camera["RealSense D405<br/>RGB-D 图像"] --> detect["AprilTag / YOLO<br/>目标检测"]
-    detect --> controller["SystemController<br/>状态机调度"]
-    controller --> ibvs["IBVS<br/>视觉伺服速度计算"]
-    controller --> teleop["RobotTeleoperation<br/>键盘遥操作"]
-    ibvs --> robot["Universal Robots<br/>运动执行"]
-    teleop --> robot
-    yolo["TensorRT Detection<br/>GPU 推理"] --> detect
+    camera["RealSense D405<br/>末端相机图像"] --> tag["AprilTag<br/>螺栓平面位姿估计"]
+    tag --> ibvs["IBVS<br/>姿态误差计算"]
+    ibvs --> align["电动扳手姿态对准<br/>与螺栓平面平行"]
+    align --> teleop["键盘遥操作<br/>XYZ 平移微调"]
+    teleop --> robot["Universal Robots<br/>执行末端运动"]
 ```
 
 核心闭环：
 
 ```text
-RealSense 图像采集 -> AprilTag/YOLO 检测 -> IBVS 控制计算 -> UR 机器人执行
+RealSense 图像采集 -> AprilTag 螺栓平面位姿估计 -> IBVS 姿态对准 -> 键盘 XYZ 平移微调
 ```
 
-## My Contributions
+## 主要工作
 
-- 设计并实现 `SystemController` 状态机，协调视觉伺服、遥操作、目标检测和硬件接口。
-- 实现基于 AprilTag 的 IBVS 控制流程，完成图像误差计算、控制律执行和机器人速度发送。
-- 封装 `RobotTeleoperation` 键盘控制模块，支持位姿控制、关节控制、精细/快速控制和急停。
-- 集成 TensorRT YOLO 推理模块，实现目标检测结果解析与可视化。
-- 编写独立 YOLO 测试程序，支持相机、图片、视频三类输入源和性能统计。
+- 设计并实现 `SystemController` 状态机，协调 AprilTag 检测、IBVS 对准、键盘遥操作和机器人控制。
+- 实现基于 AprilTag 的 IBVS 对准流程，使机械臂末端电动扳手自动调整到与螺栓平面平行。
+- 实现收敛后的混合控制逻辑：IBVS 保持姿态，键盘控制末端电动扳手沿 X/Y/Z 平移。
+- 封装 `RobotTeleoperation` 键盘控制模块，支持精细/快速步长、急停和退出控制。
+- 完成 YOLO 螺栓识别测试，可在图像中定位四个螺栓位置，并保留 TensorRT 推理接口和独立测试程序。
 - 将机器人 IP、AprilTag、相机分辨率、控制步长、安全位姿等参数集中到 `AppConfig`。
 
-## Core Features
+## 核心功能
 
-- **视觉伺服控制（IBVS）**：基于 AprilTag 的图像视觉伺服与目标跟踪。
-- **机器人遥操作**：通过键盘控制机器人平移、旋转、关节运动和急停。
-- **YOLO 目标检测**：在 CUDA/TensorRT 可用时启用 GPU 加速检测。
+- **视觉伺服控制（IBVS）**：基于 AprilTag 识别螺栓平面，并调整电动扳手末端姿态。
+- **键盘 XYZ 遥操作**：在姿态对准后，通过键盘控制电动扳手上下、左右、前后移动。
+- **YOLO 螺栓识别扩展**：已完成四螺栓位置识别测试，仓库包含 TensorRT 检测模块和测试程序。
 - **RealSense 相机接口**：通过 ViSP `vpRealSense2` 获取 RGB/深度数据。
 - **模块化控制器**：由 `SystemController` 协调视觉伺服、遥操作、检测和硬件接口。
 
-## Hardware
+## 硬件组成
 
 - Universal Robots 系列机器人（如 UR5、UR10、UR12e 等）
+- 机械臂末端电动扳手执行器
+- 带 AprilTag 标记的螺栓平面或螺栓作业工装
 - Intel RealSense D405 相机
 - NVIDIA GPU（可选，用于 TensorRT/YOLO 加速）
 
-## Project Structure
+## 项目结构
 
 ```text
 .
@@ -97,12 +90,12 @@ RealSense 图像采集 -> AprilTag/YOLO 检测 -> IBVS 控制计算 -> UR 机器
 │   ├── TEST_INSTRUCTIONS.md
 │   ├── run_test.sh
 │   └── test_yolo_detector.cpp
-└── else/
+└── archive/
 ```
 
-## Dependencies
+## 环境依赖
 
-### Required
+### 必需依赖
 
 - CMake 3.10+
 - C++17 兼容编译器
@@ -128,7 +121,7 @@ make -j$(nproc)
 sudo make install
 ```
 
-### Optional
+### 可选依赖
 
 - CUDA：用于 GPU 加速。
 - TensorRT：用于 YOLO 推理。可通过 `TENSORRT_DIR` 指定安装路径；未设置时，
@@ -143,7 +136,7 @@ set(VISP_DIR "/home/kun/visp-ws/visp-build")
 如果本机 ViSP 安装路径不同，请先在 `CMakeLists.txt` 中调整该路径，或改为适合本机
 环境的查找方式。
 
-## Build
+## 编译
 
 ```bash
 mkdir -p build
@@ -158,25 +151,27 @@ make -j$(nproc)
 ./IBVS_Teleoperation
 ```
 
-## Run
+## 运行
 
-1. 连接 Universal Robots 机器人，并确认机器人处于可远程控制状态。
-2. 连接 RealSense D405 相机。
-3. 根据本机网络和标定结果检查 `include/AppConfig.h` 中的机器人 IP、相机参数和外参。
-4. 启动程序：
+1. 将电动扳手安装到机械臂末端，并确认工具坐标系、相机外参和工作空间安全。
+2. 在螺栓平面或作业工装上布置 AprilTag，确保相机能稳定看到标签。
+3. 连接 Universal Robots 机器人，并确认机器人处于可远程控制状态。
+4. 连接 RealSense D405 相机。
+5. 根据本机网络和标定结果检查 `include/AppConfig.h` 中的机器人 IP、AprilTag 尺寸、相机参数和外参。
+6. 启动程序：
 
 ```bash
 cd build
 ./IBVS_Teleoperation
 ```
 
-系统启动后默认进入视觉伺服流程，并可切换到遥操作流程。
+系统启动后先执行 IBVS 姿态对准；当视觉误差连续收敛后，进入键盘 XYZ 平移微调阶段。
 
-### Teleoperation Keys
+### 键盘控制
 
-- **W/X**：X 方向平移
-- **A/D**：Y 方向平移
-- **R/F**：Z 方向平移
+- **W/X**：电动扳手沿 X 方向前后移动
+- **A/D**：电动扳手沿 Y 方向左右移动
+- **R/F**：电动扳手沿 Z 方向上下移动
 - **I/K**：绕 X 轴旋转
 - **J/L**：绕 Y 轴旋转
 - **U/O**：绕 Z 轴旋转
@@ -187,20 +182,26 @@ cd build
 - **Space**：急停/解除急停
 - **Q**：退出
 
-具体按键行为以 `src/RobotTeleoperation.cpp` 当前实现为准。
+本项目主要使用 `W/X`、`A/D`、`R/F` 完成电动扳手 XYZ 微调。其他旋转和关节按键保留为调试能力，具体行为以 `src/RobotTeleoperation.cpp` 当前实现为准。
 
-## YOLO Detection
+## 可选 YOLO/TensorRT 模块
 
-YOLO 检测依赖 TensorRT。启用步骤：
+仓库中包含 `TensorRT_detection` 封装和 YOLO 测试程序。目前项目主线聚焦 AprilTag 视觉伺服对准螺栓平面；同时，YOLO 螺栓识别部分已完成基础验证，可正常识别螺栓平面上的四个螺栓位置。
+
+<div align="center">
+  <img src="assets/YOLO螺栓识别.png" alt="YOLO 螺栓识别结果" width="70%">
+</div>
+
+启用 YOLO/TensorRT 需要：
 
 1. 准备 `.engine` 或 `.trt` 格式的 TensorRT 模型文件。
 2. 在配置或初始化逻辑中设置模型路径，例如使用 `models/model_fp16.engine`。
 3. 确认 CUDA、TensorRT 库和头文件可被 CMake 找到。
 4. 重新编译并运行主程序。
 
-检测结果会绘制在相机图像上，并在控制台输出检测状态和性能信息。
+如果没有配置模型路径，主流程会使用 AprilTag 检测完成视觉伺服。
 
-## Test YOLO Detector
+## YOLO 检测测试程序
 
 测试程序位于 `test/`，用于验证 YOLO 检测器，可使用相机、图片或视频作为输入。
 
@@ -241,7 +242,7 @@ cd test
 - `--width, -w <值>`：相机宽度
 - `--height, -h <值>`：相机高度
 
-## Configuration
+## 系统配置
 
 主要配置集中在 `include/AppConfig.h` 的 `AppConfig` 结构体中：
 
@@ -270,15 +271,15 @@ cd test
 `AppConfig` 还包含相机外参 `ePc` 和安全关节位姿 `safe_joint_position`，部署前应根据
 实际标定与机器人工作空间检查这些值。
 
-## Detailed Architecture
+## 详细架构
 
 ```text
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │                                  系统控制器                                  │
 │                                                                              │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐          │
-│  │  视觉伺服   │  │  遥操作     │  │ YOLO 检测   │  │  相机接口   │          │
-│  │  控制模块   │  │  控制模块   │  │  控制模块   │  │  控制模块   │          │
+│  │  姿态对准   │  │ XYZ 微调    │  │ AprilTag    │  │  相机接口   │          │
+│  │  IBVS模块   │  │  遥操作模块 │  │ 平面估计模块 │  │  控制模块   │          │
 │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘          │
 └──────────────────────────────────────────────────────────────────────────────┘
                                     │
@@ -287,54 +288,54 @@ cd test
 │                               底层硬件接口                                   │
 │                                                                              │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐          │
-│  │ Universal   │  │ RealSense   │  │ CUDA 加速   │  │ TensorRT    │          │
-│  │ Robots      │  │ D405        │  │             │  │ 推理引擎    │          │
+│  │ Universal   │  │ RealSense   │  │ ViSP        │  │ OpenCV      │          │
+│  │ Robots      │  │ D405        │  │ 视觉伺服    │  │ 图像处理    │          │
 │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘          │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Core Modules
+### 核心模块
 
-- **SystemController**：协调各模块工作，负责状态管理和任务调度。实现文件：
+- **SystemController**：协调 AprilTag 检测、IBVS 对准、键盘微调和速度发送。实现文件：
   `src/SystemController.cpp`。
-- **视觉伺服控制（IBVS）**：基于 AprilTag 进行目标追踪，计算视觉误差并发送机器人速度。
-  相关逻辑位于 `SystemController` 的视觉伺服处理流程中。
-- **RobotTeleoperation**：解析键盘输入，生成平移、旋转、关节控制和急停指令。实现文件：
+- **视觉伺服控制（IBVS）**：基于 AprilTag 估计螺栓平面相对相机的位姿，计算视觉误差，
+  发送机器人速度，使电动扳手末端姿态与螺栓平面平行。
+- **RobotTeleoperation**：解析键盘输入，在 IBVS 收敛后生成 X/Y/Z 平移微调和急停指令。实现文件：
   `src/RobotTeleoperation.cpp`。
-- **TensorRT_detection**：封装 TensorRT 推理、检测结果解析与可视化。实现文件：
-  `src/TensorRT_detection.cpp`。
+- **TensorRT_detection（可选）**：封装 TensorRT 推理、检测结果解析与可视化。实现文件：
+  `src/TensorRT_detection.cpp`。当前主要演示不依赖该模块。
 - **相机接口**：通过 ViSP `vpRealSense2` 获取 RealSense D405 的图像和深度数据。
 
-### State Machine
+### 状态机
 
 系统控制器使用状态机组织任务流程：
 
-- `STATE_IBVS`：视觉伺服状态
+- `STATE_IBVS`：视觉伺服对准状态，用于让电动扳手与螺栓平面平行
 - `STATE_WAIT_SELECT`：等待选择状态
 - `STATE_APPROACH`：接近目标状态
-- `STATE_TELEOP`：遥操作状态
+- `STATE_TELEOP`：遥操作状态，用于对准后的 XYZ 平移微调
 
-### Data Flow
+### 数据流
 
-视觉伺服：
-
-```text
-相机图像 -> AprilTag 目标检测 -> 视觉伺服速度计算 -> 机器人执行运动
-```
-
-遥操作：
+姿态对准：
 
 ```text
-键盘输入 -> 遥操作指令解析 -> 速度/关节控制 -> 机器人执行运动
+相机图像 -> AprilTag 螺栓平面位姿估计 -> IBVS 姿态误差计算 -> 电动扳手对准螺栓平面
 ```
 
-YOLO 检测：
+XYZ 微调：
+
+```text
+键盘输入 -> XYZ 平移指令解析 -> 机械臂末端速度控制 -> 电动扳手靠近/移动到目标螺栓
+```
+
+可选 YOLO/TensorRT 检测：
 
 ```text
 RGB 图像 -> 图像预处理 -> TensorRT 模型推理 -> 检测结果绘制
 ```
 
-## Troubleshooting
+## 常见问题
 
 程序运行时会在控制台输出初始化、检测、控制和错误信息。常见问题如下：
 
@@ -343,17 +344,17 @@ RGB 图像 -> 图像预处理 -> TensorRT 模型推理 -> 检测结果绘制
 | 相机连接失败 | 相机未连接、驱动或 RealSense SDK 异常 | 检查连接、驱动和 SDK，重新插拔相机 |
 | 机器人连接失败 | IP 错误、网络异常、机器人未进入远程模式 | 检查 `robot_ip`、网络和机器人控制模式 |
 | TensorRT 未找到 | 未安装 TensorRT 或路径未配置 | 设置 `TENSORRT_DIR`，检查库文件和头文件路径 |
-| YOLO 检测不工作 | 模型路径错误或 GPU/CUDA 配置异常 | 检查模型文件、CUDA、TensorRT 和 GPU 支持 |
-| 视觉伺服不稳定 | 增益、相机固定、标定或 AprilTag 可见性问题 | 调整参数，固定相机，重新标定并保证标签清晰 |
+| YOLO/TensorRT 扩展不工作 | 模型路径错误或 GPU/CUDA 配置异常 | 检查模型文件、CUDA、TensorRT 和 GPU 支持；主流程可继续使用 AprilTag |
+| 电动扳手对准不稳定 | 增益、相机固定、标定或 AprilTag 可见性问题 | 调整 IBVS 参数，固定相机，重新标定并保证标签清晰 |
 
-## Extension Points
+## 扩展方向
 
 - 扩展 `TensorRT_detection`，接入新的目标检测算法或类别。
 - 替换 `vpRealSense2` 实例以支持其他相机。
 - 替换 `vpRobotUniversalRobots` 实例以支持其他机器人。
 - 在 `SystemController` 中添加路径规划、碰撞检测、多机器人协同或图形化界面。
 
-## Safety Notes
+## 安全注意事项
 
 - 初次运行必须在安全、空旷、可急停的环境中测试。
 - 启动前检查机器人 IP、工作空间、安全位姿、相机外参和控制步长。
@@ -361,15 +362,7 @@ RGB 图像 -> 图像预处理 -> TensorRT 模型推理 -> 检测结果绘制
 - 定期校准相机与机器人外参。
 - 建议在实际部署中加入额外的工作空间限制和碰撞检测。
 
-## Future Work
+## 后续优化
 
-- 增加 GUI 控制界面，展示相机图像、检测框、状态机状态和机器人状态。
 - 添加碰撞检测和工作空间约束。
 - 接入路径规划模块，实现更复杂的任务级控制。
-- 补充真实实验 GIF/视频和性能数据，增强简历展示效果。
-
-## Document Source
-
-本 README 合并并重写了 `SYSTEM_ARCHITECTURE.md` 与 `USER_GUIDE.md` 的内容，同时根据
-当前 `CMakeLists.txt`、`include/AppConfig.h`、`src/RobotTeleoperation.cpp` 和测试文档
-更新了构建、配置、按键与测试说明。
