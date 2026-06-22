@@ -3,8 +3,8 @@
 > 面向螺栓作业的 Universal Robots 视觉伺服与遥操作系统。项目通过 RealSense D405 识别螺栓平面上的 AprilTag，使用 IBVS 调整机械臂末端电动扳手姿态，使电动扳手与螺栓平面平行；对准后通过键盘控制电动扳手在 XYZ 方向移动，实现靠近、定位和作业前微调。
 
 <div align="center">
-  <img src="assets/全局视角.gif" alt="全局视角" width="45%">
-  <img src="assets/12eD405视角.gif" alt="UR12e D405 视角" width="45%">
+  <img src="assets/全局视角_压缩版.gif" alt="全局视角" width="45%">
+  <img src="assets/12eD405视角_压缩版.gif" alt="UR12e D405 视角" width="45%">
 </div>
 
 ## 说明
